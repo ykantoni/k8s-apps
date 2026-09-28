@@ -1,0 +1,19 @@
+name: postgres
+# 1 primary + (instances - 1) streaming-replication standbys.
+instances: 2
+imageName: ghcr.io/cloudnative-pg/postgresql:17.2
+
+storage:
+  size: 10Gi
+  # 3x Longhorn replication on top of Postgres's own replication between
+  # instances; trim with a lower-replica StorageClass if that's too much.
+  storageClass: longhorn
+
+bootstrap:
+  initdb:
+    database: app
+    owner: app
+    # Name of a kubernetes.io/basic-auth Secret (username, password) for the
+    # owner, committed as a SealedSecret in manifests/postgres/. Empty lets
+    # CNPG generate one (postgres-app); see manifests/postgres/README.md.
+    secretName: ""

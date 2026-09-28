@@ -1,0 +1,23 @@
+# Open WebUI bundles its own Ollama subchart by default; the ollama
+# Application brings its own release (with GPU scheduling), so the bundled one
+# is disabled and pointed at that release's Service.
+ollama:
+  enabled: false
+
+ollamaUrls:
+  - http://ollama.ollama.svc.cluster.local:11434
+
+service:
+  type: LoadBalancer
+
+persistence:
+  enabled: true
+  size: 2Gi
+  storageClass: longhorn
+
+# A single replica needs no external state for websockets; skipping Redis
+# avoids a dependency with no benefit at replicas=1.
+websocket:
+  manager: ""
+  redis:
+    enabled: false

@@ -1,0 +1,38 @@
+# A CloudNativePG Cluster. The operator and its CRDs come from k8s-infra's
+# cnpg-operator Application; SkipDryRunOnMissingResource plus retry lets this
+# be created before they exist and converge once they do.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: postgres
+  namespace: argocd-apps
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: k8s-apps
+  sources:
+    - repoURL: https://github.com/ykantoni/k8s-apps.git
+      targetRevision: main
+      path: charts/postgres-cluster
+      helm:
+        releaseName: postgres-cluster
+    # SealedSecrets for this app (e.g. the initdb owner's credentials).
+    - repoURL: https://github.com/ykantoni/k8s-apps.git
+      targetRevision: main
+      path: manifests/postgres
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: postgres
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: -1
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 10m
+    syncOptions:
+      - CreateNamespace=true
+      - SkipDryRunOnMissingResource=true

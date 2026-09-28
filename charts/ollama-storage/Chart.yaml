@@ -1,0 +1,5 @@
+apiVersion: v2
+name: ollama-storage
+description: Node-local StorageClass and PersistentVolume for Ollama's model cache
+type: application
+version: 0.1.0

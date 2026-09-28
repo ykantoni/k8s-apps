@@ -1,0 +1,44 @@
+# Ollama on the GPU node. Needs k8s-infra's gpu-operator (nvidia RuntimeClass,
+# nvidia.com/gpu resource, nvidia.com/gpu.present label); retries until it
+# exists.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ollama
+  namespace: argocd-apps
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: k8s-apps
+  sources:
+    - repoURL: https://otwld.github.io/ollama-helm/
+      chart: ollama
+      targetRevision: 1.77.0
+      helm:
+        releaseName: ollama
+        valueFiles:
+          - $values/values/ollama/values.yaml
+    - repoURL: https://github.com/ykantoni/k8s-apps.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ollama
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: -1
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 10m
+    syncOptions:
+      - CreateNamespace=true
+    # The ollama and open-webui images run as root, which RKE2's CIS-default
+    # "restricted" level rejects; baseline allows it without host access.
+    managedNamespaceMetadata:
+      labels:
+        pod-security.kubernetes.io/enforce: baseline
+        pod-security.kubernetes.io/warn: restricted

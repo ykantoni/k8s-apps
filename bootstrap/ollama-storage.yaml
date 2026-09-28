@@ -1,0 +1,31 @@
+# The node-local StorageClass and PersistentVolume Ollama's model
+# cache binds to. Cluster-scoped, which the k8s-apps AppProject allows for
+# exactly these two kinds (plus Namespace).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ollama-storage
+  namespace: argocd-apps
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: k8s-apps
+  source:
+    repoURL: https://github.com/ykantoni/k8s-apps.git
+    targetRevision: main
+    path: charts/ollama-storage
+    helm:
+      releaseName: ollama-storage
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ollama
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: -1
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 10m

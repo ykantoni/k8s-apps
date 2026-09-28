@@ -1,0 +1,27 @@
+ollama:
+  gpu:
+    enabled: true
+    type: nvidia
+    number: 1
+  # Pick models from Open WebUI's model manager instead of pulling at startup.
+  models:
+    pull: []
+
+# The "nvidia" RuntimeClass and nvidia.com/gpu.present label both come from
+# k8s-infra's gpu-operator.
+runtimeClassName: nvidia
+nodeSelector:
+  nvidia.com/gpu.present: "true"
+
+# LoadBalancer gets an address from k8s-infra's Cilium LB-IPAM pool. Open
+# WebUI reaches Ollama over ClusterIP DNS regardless; this is for clients
+# outside the cluster hitting Ollama's API directly.
+service:
+  type: LoadBalancer
+  port: 11434
+
+# Binds to charts/ollama-storage's local PV; size must fit within it.
+persistentVolume:
+  enabled: true
+  size: 20Gi
+  storageClass: ollama-local

@@ -1,0 +1,17 @@
+# Pulled models are re-downloadable cache, not data worth replicating (or
+# worth Longhorn's engine overhead on the same node's disk), so Ollama's PVC
+# binds to a statically provisioned "local" PV on the GPU node instead.
+
+storageClassName: ollama-local
+persistentVolumeName: ollama-models
+
+size: 20Gi
+
+# Must already exist on the GPU node, be writable, and persist across
+# reboots; nothing here creates it.
+path: /var/lib/ollama-models
+
+# Pins the PV to the GPU node. The label is applied by k8s-infra's
+# gpu-operator (NFD); must match ollama's nodeSelector in values/ollama.
+nodeSelector:
+  nvidia.com/gpu.present: "true"
