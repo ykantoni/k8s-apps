@@ -16,7 +16,7 @@ spec:
       path: charts/postgres-cluster
       helm:
         releaseName: postgres-cluster
-    # SealedSecrets for this app (e.g. the initdb owner's credentials).
+    # ExternalSecrets for this app (e.g. the initdb owner's credentials).
     - repoURL: https://github.com/ykantoni/k8s-apps.git
       targetRevision: main
       path: manifests/postgres

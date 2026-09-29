@@ -36,8 +36,7 @@ races a dependency just retries with backoff and converges.
 bootstrap/<app>.yaml        one Argo CD Application per app (namespace argocd-apps, project k8s-apps)
 values/<app>/values.yaml    Helm values for chart-repo apps ($values ref)
 charts/<chart>/             local charts (their own values.yaml)
-manifests/<app>/            SealedSecrets and other raw manifests for that app
-pub-cert.pem                Sealed Secrets public cert, for offline sealing
+manifests/<app>/            ExternalSecrets and other raw manifests for that app
 ```
 
 ## Adding an app
@@ -56,18 +55,31 @@ pub-cert.pem                Sealed Secrets public cert, for offline sealing
 
 ## Secrets
 
-The repository is public: commit only `SealedSecret`s. `lint.yml` fails on any
-plain `kind: Secret`. Get `pub-cert.pem` from `just seal-cert` in vm-infra and
-commit it here, then:
+Secret values live in OpenBao, run by k8s-infra. The repository only holds
+`ExternalSecret`s, which carry no values. External Secrets Operator turns
+each one into an ordinary Secret in the app's namespace. `lint.yml` fails on
+any plain `kind: Secret`.
 
-```bash
-kubectl create secret generic <name> -n <namespace> \
-  --from-literal=<key>=<value> --dry-run=client -o yaml \
-| kubeseal --cert pub-cert.pem -o yaml > manifests/<app>/<name>.sealed.yaml
+Store the value under `secret/<namespace>/<name>` (writing values and
+unsealing are covered in k8s-infra's `manifests/openbao/README.md`), then
+commit `manifests/<app>/<name>.yaml`:
+
+```yaml
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: <name>
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: openbao
+  target:
+    name: <name>
+  dataFrom:
+    - extract:
+        key: <namespace>/<name>
 ```
-
-A SealedSecret only decrypts in the namespace, and under the name, it was
-sealed for.
 
 ## Notes per app
 
@@ -80,4 +92,4 @@ sealed for.
   `http://ollama.ollama.svc.cluster.local:11434`; its own data is on Longhorn.
 - **postgres** — a CNPG `Cluster`, 2 instances, 10Gi each on Longhorn. The
   owner's credentials are CNPG-generated (`postgres-app`) unless you commit
-  a SealedSecret; see `manifests/postgres/README.md`.
+  an ExternalSecret; see `manifests/postgres/README.md`.

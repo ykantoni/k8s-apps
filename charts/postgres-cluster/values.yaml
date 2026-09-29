@@ -14,6 +14,7 @@ bootstrap:
     database: app
     owner: app
     # Name of a kubernetes.io/basic-auth Secret (username, password) for the
-    # owner, committed as a SealedSecret in manifests/postgres/. Empty lets
-    # CNPG generate one (postgres-app); see manifests/postgres/README.md.
+    # owner, synced from OpenBao by an ExternalSecret in manifests/postgres/.
+    # Empty lets CNPG generate one (postgres-app); see
+    # manifests/postgres/README.md.
     secretName: ""
